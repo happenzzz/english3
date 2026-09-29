@@ -463,6 +463,14 @@
   .voice-actions .stop { background: #ef4444; color: white; }
   @media (max-width: 760px) { ol.guide { font-size: 16px; } }
 
+  .mic-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; font-weight: 700; }
+  .mic-pick select { min-height: 40px; max-width: 100%; padding: 6px 10px; border-radius: 10px; border: 1px solid #cbd5e1; font: inherit; font-weight: 500; }
+  /* v5.5: Samsung Internet / in-app browser notice */
+  .browser-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; padding: 12px 16px; border-radius: 14px; background: #fff4e5; border: 2px solid #f5b454; color: #7a4300; font-size: 16px; line-height: 1.5; word-break: keep-all; }
+  .reading-dialog .browser-notice { margin: 12px 0 0; font-size: 14px; }
+  .open-chrome { flex: 0 0 auto; padding: 9px 16px; border-radius: 12px; background: #1a73e8; color: white; font-weight: 800; text-decoration: none; }
+  .open-chrome[hidden] { display: none; }
+
   /* v5.3: sentence and picture cards share one height (picture card is the reference) */
   :root { --pair-h: 144px; }
   #sentenceCards .card, #pictureCards .card { height: var(--pair-h); min-height: 0; }
@@ -488,6 +496,7 @@
 </head>
 <body>
 <div class="wrap">
+  <div class="browser-notice" data-browser-notice hidden><span><strong data-browser-name>이 브라우저</strong>에서는 영어 음성인식(단어 동그라미)이 작동하지 않을 수 있어요. <strong>Chrome</strong>에서 열어 주세요.</span><a class="open-chrome" data-open-chrome href="#">Chrome으로 열기</a></div>
   <div class="top">
     <h1><span lang="en">What's This? How Many?</span> 짝 찾고 읽기</h1>
     <div class="top-buttons">
@@ -565,6 +574,7 @@
         <span id="levelHint">말할 때 막대가 움직이는지 보세요.</span>
       </div>
     </div>
+    <div class="browser-notice" data-browser-notice hidden><span><strong data-browser-name>이 브라우저</strong>에서는 영어 음성인식(단어 동그라미)이 작동하지 않을 수 있어요. <strong>Chrome</strong>에서 열어 주세요.</span><a class="open-chrome" data-open-chrome href="#">Chrome으로 열기</a></div>
     <p id="voiceStatus" class="voice-status" role="status" aria-live="polite">문장 카드와 그림 카드의 짝을 먼저 골라 주세요.</p>
     <details id="transcriptBox" class="transcript-box" hidden>
       <summary>들린 말 확인 <small id="transcriptLabel"></small></summary>
@@ -574,14 +584,19 @@
     <details id="micHelp" class="mic-help">
       <summary>마이크 확인 · 권한 도움말</summary>
       <p id="deviceInfo">권한 창은 Read 또는 마이크 확인을 눌렀을 때만 요청합니다.</p>
+      <label id="micPickRow" class="mic-pick" hidden>사용할 마이크
+        <select id="micSelect" onchange="chooseMicrophone(this.value)"><option value="">Chrome 기본 마이크</option></select>
+      </label>
       <div class="voice-actions">
         <button id="micCheckBtn" class="secondary" onclick="checkMicrophone()">마이크 확인</button>
         <button id="micOffBtn" class="secondary" onclick="turnOffMicrophone()">마이크 끄기</button>
       </div>
       <ol>
+        <li><strong>컴퓨터에서 USB 마이크</strong>를 쓸 때: 위 ‘사용할 마이크’에서 그 마이크를 고르고 ‘마이크 확인’으로 막대가 움직이는지 보세요. Windows 설정 → 시스템 → 소리 → <strong>입력</strong>에서도 같은 마이크를 고르고 음량을 올려 두면 더 확실해요.</li>
         <li>배포한 <strong>HTTPS 주소</strong>를 Chrome 일반 탭에서 직접 열어 주세요. 파일 미리보기나 다른 앱 안의 화면에서는 제한될 수 있어요.</li>
         <li>스마트패드 설정 → 애플리케이션 → Chrome → 권한 → 마이크에서 <strong>앱 사용 중에만 허용</strong>을 선택해 주세요.</li>
         <li>Chrome → 설정 → 사이트 설정 → 마이크에서 <strong>현재 사이트를 허용</strong>해 주세요. 기기 전체의 ‘마이크 액세스’도 켜져 있어야 해요.</li>
+        <li><strong>‘음성인식의 마이크 접근이 차단’</strong> 메시지가 나오면: 영어 음성인식은 <strong>Google 앱</strong>이 처리해요. 설정 → 애플리케이션 → <strong>Google</strong> → 권한 → 마이크를 <strong>앱 사용 중에만 허용</strong>으로 바꾸고, Play 스토어에서 Google 앱을 업데이트해 주세요. 그래도 안 되면 Chrome 주소창 왼쪽 아이콘 → 권한 → <strong>권한 재설정</strong> 후 새로고침해서 다시 허용해 주세요.</li>
         <li>마이크가 다른 앱에서 사용 중이면 그 앱을 닫아 주세요. 학교 관리 기기에서 설정이 잠겨 있으면 담당 선생님께 알려 주세요.</li>
       </ol>
       <p id="diagnostic" class="diagnostic" aria-live="polite"></p>
@@ -598,9 +613,9 @@
   </div>
   </dialog>
   <div class="note">
-    쉬운 판정: 단어의 절반 이상이 들리거나, 파란 글씨의 중요한 단어(물건 이름, 수, sit down)가 들리면 통과해요. 다른 물건 이름이나 수를 말하면 다시 읽어요. 재도전해도 별은 줄지 않아요.<br>
+    쉬운 판정: 두 문장에서 단어가 40% 이상 들리거나, 파란 글씨의 중요한 단어(물건 이름, 수, sit down)가 들리면 통과해요. 다른 카드의 물건 이름을 말하면 다시 읽어요. 모든 동그라미가 채워진 뒤 ‘읽기 완료’를 누르면 Perfect! 재도전해도 별은 줄지 않아요.<br>
     천천히 읽어도 괜찮아요. 중간에 잠깐 쉬어도 1분 동안 계속 들어요.<br>
-    자동 확인은 영어 단어를 알아듣는 활동이며 전문 발음 점수는 아니에요. 3, 5처럼 숫자로 들려도 three, five로 인정해요.<br>
+    자동 확인은 영어 단어를 알아듣는 활동이며 전문 발음 점수는 아니에요. 3, 5처럼 숫자로 들려도 three, five로 인정하고, f/p, v/b, r/l, th/t처럼 헷갈리기 쉬운 발음과 a 같은 작은 단어는 너그럽게 인정해요.<br>
     자동 음성인식에는 인터넷이 필요하며 브라우저의 인식 서비스가 음성을 처리할 수 있어요.
   </div>
 
@@ -1056,7 +1071,10 @@ function updateReadingChoices() {
   byId('finishBtn').disabled = !enabled;
   const hint = byId('decisionHint');
   hint.classList.toggle('ready', enabled);
-  hint.textContent = enabled
+  const perfectNow = enabled && currentReadingState().perfect;
+  hint.textContent = perfectNow
+    ? '모든 단어가 동그라미에 쏙! ‘읽기 완료’를 누르면 Perfect!'
+    : enabled
     ? '통과할 수 있어요! 다시 도전하거나 이대로 읽기를 완료해도 좋아요.'
     : voice.phase === 'finishing' ? '마지막으로 들린 말을 확인하고 있어요…'
     : '두 문장을 읽어 판정 기준을 채우면 두 버튼이 열려요.';
@@ -1068,21 +1086,7 @@ function refreshReadingEligibility(a) {
     if (qualified && coachState.mood !== 'qualified') setCoach('qualified');
     else if (!qualified && coachState.mood === 'qualified') setCoach('listening');
   }
-  if (!isCurrent(a) || a.finalized || !['listening', 'review'].includes(voice.phase)) return;
-  const state = currentReadingState(a);
-  // Wait for a stable full sentence, then stop input and validate final results.
-  // Merely showing all interim circles must never award an unconfirmed result.
-  const candidate = state.perfect ? normalizeText(state.text) : '';
-  if (candidate === a.perfectCandidate && a.perfectTimer) return;
-  clearTimeout(a.perfectTimer);
-  a.perfectTimer = null;
-  a.perfectCandidate = candidate;
-  if (!candidate) return;
-  a.perfectTimer = setTimeout(() => {
-    a.perfectTimer = null;
-    if (isCurrent(a) && !a.finalized && currentReadingState(a).perfect
-        && ['listening', 'review'].includes(voice.phase)) finishReading({ intent: 'perfect' });
-  }, PERFECT_WAIT_MS);
+  // No automatic finish: even a perfect reading waits for the child's ‘읽기 완료’.
 }
 function startOrRestartReading() {
   if (voice.phase === 'review') stopReading('다시 읽어 볼까요?');
@@ -1120,10 +1124,19 @@ async function finishReading({ intent = 'complete' } = {}) {
   stopClock(a);
   setBadge('결과 확인 중');
   setStatus('읽은 내용을 확인하고 있어요. 잠깐만 기다려 주세요.');
-  // Fast path: if the already-confirmed words pass, finish now instead of
-  // waiting for the recognition service to close.
-  const early = currentReadingState(a, true);
-  if (a.error || !early.ok || (intent !== 'complete' && !early.perfect)) await waitForRecognition(a);
+  // The child pressed 읽기 완료 while the circles already pass: judge exactly
+  // what the child saw on screen (interim words included) and finish now.
+  const seen = currentReadingState(a, false);
+  if (intent === 'complete' && !a.error && seen.ok) {
+    a.finalized = true;
+    resetRecognitionHandlers(a);
+    parkMicrophone();
+    lastTranscript = seen.text;
+    accumulatedSpeech = normalizeText(seen.text);
+    commitReading(a, seen.perfect);
+    return;
+  }
+  await waitForRecognition(a);
   if (!isCurrent(a)) return;
   // Slow service: if the final result did not arrive in time, use the words
   // already shown on screen rather than making the child read again.
@@ -1139,7 +1152,7 @@ async function finishReading({ intent = 'complete' } = {}) {
   lastTranscript = finalSpeech;
   accumulatedSpeech = normalizeText(finalSpeech);
   const result = currentReadingState(a, true);
-  if (result.ok && (intent === 'complete' || result.perfect)) {
+  if (result.ok && intent === 'complete') {
     commitReading(a, result.perfect);
     return;
   }
@@ -1177,20 +1190,45 @@ function speechTokens(text) {
     .replace(/\bnote book\b/g, 'notebook')
     .split(/\s+/).filter(Boolean);
 }
+// Lenient pronunciation matching for young learners. Words are compared by a
+// rough "sound key" that forgives common Korean-learner confusions
+// (f/p, v/b, r/l, th/t, z/j/s, final -e/-s, vowel quality) plus small typos.
+const FILLER_WORDS = ['a', 'an', 'the'];
+const EXACT_WORDS = ['yes', 'no'];
+const soundKeyCache = new Map();
+function soundKey(word) {
+  if (soundKeyCache.has(word)) return soundKeyCache.get(word);
+  let k = String(word).toLowerCase().replace(/[^a-z]/g, '');
+  k = k.replace(/^kn/, 'n').replace(/^wh/, 'w').replace(/ph/g, 'f').replace(/th/g, 't').replace(/ck/g, 'k')
+    .replace(/c(?=[eiy])/g, 's').replace(/c/g, 'k').replace(/q/g, 'k').replace(/x/g, 'ks')
+    .replace(/f/g, 'p').replace(/v/g, 'b').replace(/r/g, 'l').replace(/[zj]/g, 's').replace(/(?!^)y/g, 'i')
+    .replace(/([a-z])\1+/g, '$1');
+  if (k.length > 3) k = k.replace(/e$/, '');
+  if (k.length > 3) k = k.replace(/s$/, '');
+  k = k.replace(/[aeiou]+/g, 'a');
+  soundKeyCache.set(word, k);
+  return k;
+}
+function editDistance(a, b, limit) {
+  if (Math.abs(a.length - b.length) > limit) return limit + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
 function nearbyWord(a, b) {
   if (a === b) return true;
-  // Only key (blue) words get this small tolerance; yes/no/can/can't stay distinct.
-  if (!KEY_WORDS.includes(a)) return false;
-  if (a + 's' === b) return true;
-  if (Math.abs(a.length - b.length) > 1 || b.length < 3) return false;
-  let i = 0, j = 0, edits = 0;
-  while (i < a.length && j < b.length) {
-    if (a[i] === b[j]) { i++; j++; continue; }
-    if (++edits > 1) return false;
-    if (a.length >= b.length) i++;
-    if (b.length >= a.length) j++;
-  }
-  return edits + (a.length - i) + (b.length - j) <= 1;
+  if (!a || !b) return false;
+  // Yes/No carry the meaning of the answer, so they stay exact.
+  if (EXACT_WORDS.includes(a) || EXACT_WORDS.includes(b)) return false;
+  const ka = soundKey(a), kb = soundKey(b);
+  if (ka === kb) return true;
+  const longest = Math.max(ka.length, kb.length);
+  const limit = longest >= 5 ? 2 : longest >= 3 ? 1 : 0;
+  return limit > 0 && editDistance(ka, kb, limit) <= limit;
 }
 function alignWords(expected, heard) {
   const n = expected.length, m = heard.length;
@@ -1207,6 +1245,10 @@ function alignWords(expected, heard) {
     else if (dp[i + 1][j] > dp[i][j + 1]) i++;
     else j++;
   }
+  // Recognizers often drop a / an / the: count it when both neighbours were heard.
+  expected.forEach((word, k) => {
+    if (FILLER_WORDS.includes(word) && !matched.has(k) && k > 0 && k < n - 1 && matched.has(k - 1) && matched.has(k + 1)) matched.add(k);
+  });
   return matched;
 }
 function renderWordPrompt(item, force = false) {
@@ -1406,7 +1448,12 @@ function sharedTrackSupported() {
   // track to Android/iOS where the extra argument can be silently ignored.
   const ua = navigator.userAgent;
   const chrome = ua.match(/(?:Chrome|Chromium)\/(\d+)/);
-  return !voice.forceDirect && !/Android|iPhone|iPad|iPod|SamsungBrowser|OPR\//i.test(ua)
+  // Android tablets in Chrome's "desktop site" mode report a Linux desktop UA
+  // (no "Android"), so allow only real Windows/macOS/ChromeOS desktops.
+  const mobileHint = navigator.userAgentData?.mobile === true;
+  const desktopOS = /Windows NT|Macintosh|CrOS/.test(ua) && !/Linux x86_64|Linux armv|Linux aarch64/.test(ua.replace(/CrOS[^;)]*/, ''));
+  return !voice.forceDirect && !mobileHint && desktopOS
+    && !/Android|iPhone|iPad|iPod|SamsungBrowser|OPR\//i.test(ua)
     && !(navigator.maxTouchPoints > 1 && /Macintosh/.test(ua))
     && !!chrome && Number(chrome[1]) >= 135;
 }
@@ -1497,10 +1544,34 @@ function startMeter(stream, a = null) {
     voice.meterFrame = requestAnimationFrame(frame);
   } catch { byId('meterWrap').hidden = true; }
 }
+// Desktop only: let the teacher pick which microphone the app listens to
+// (the audio track is handed to speech recognition in this mode).
+const MIC_KEY = 'reading-app-mic';
+function savedMicId() { try { return localStorage.getItem(MIC_KEY) || ''; } catch { return ''; } }
+async function refreshMicList() {
+  if (!sharedTrackSupported() || !navigator.mediaDevices?.enumerateDevices) return;
+  try {
+    const inputs = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput' && d.deviceId && d.deviceId !== 'default' && d.deviceId !== 'communications');
+    const select = byId('micSelect');
+    const current = savedMicId();
+    select.replaceChildren(new Option('Chrome 기본 마이크', ''));
+    inputs.forEach((d, i) => select.add(new Option(d.label || `마이크 ${i + 1}`, d.deviceId)));
+    select.value = inputs.some(d => d.deviceId === current) ? current : '';
+    byId('micPickRow').hidden = inputs.length < 2;
+  } catch { /* optional helper */ }
+}
+function chooseMicrophone(id) {
+  try { if (id) localStorage.setItem(MIC_KEY, id); else localStorage.removeItem(MIC_KEY); } catch {}
+  if (isBusy() || voice.checking) stopReading('마이크를 바꿨어요. Read를 눌러 다시 읽어 주세요.');
+  releaseMicrophone();
+  setStatus('마이크를 바꿨어요. ‘마이크 확인’을 눌러 말할 때 막대가 움직이는지 보세요.');
+}
+navigator.mediaDevices?.addEventListener?.('devicechange', refreshMicList);
 function showDevice(stream) {
   const track = stream.getAudioTracks()[0];
   byId('deviceInfo').textContent = track?.label
     ? `연결된 마이크: ${track.label}` : '마이크가 연결됐어요. 말할 때 목소리 크기 막대가 움직이는지 보세요.';
+  refreshMicList();
 }
 async function acquireMicrophone() {
   clearTimeout(voice.idleTimer);
@@ -1513,9 +1584,17 @@ async function acquireMicrophone() {
   if (voice.micPromise) return voice.micPromise;
   const epoch = voice.micEpoch;
   const request = (async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false
-    });
+    const audio = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
+    const chosen = sharedTrackSupported() ? savedMicId() : '';
+    let stream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: chosen ? { ...audio, deviceId: { exact: chosen } } : audio, video: false });
+    } catch (error) {
+      // The chosen microphone was unplugged: forget it and use the default one.
+      if (!chosen || !['OverconstrainedError', 'NotFoundError', 'NotReadableError'].includes(error?.name)) throw error;
+      try { localStorage.removeItem(MIC_KEY); } catch {}
+      stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
+    }
     if (epoch !== voice.micEpoch || document.hidden) {
       stream.getTracks().forEach(t => t.stop());
       throw Object.assign(new Error(), { name: 'AbortError' });
@@ -1562,6 +1641,10 @@ function errorMessage(error, source = 'media') {
   const code = typeof error === 'string' ? error : error?.name || 'UnknownError';
   byId('diagnostic').textContent = `최근 상태: ${source} / ${code}`;
   const tail = ' 별점은 그대로예요.';
+  const serviceFailure = ['not-allowed', 'service-not-allowed', 'language-not-supported', 'network', 'NotSupportedError', 'audio-capture'].includes(code);
+  if (UNSUPPORTED_BROWSER && serviceFailure) {
+    return `${UNSUPPORTED_BROWSER}에서는 영어 음성인식이 작동하지 않아요. ` + (chromeLink() ? '‘Chrome으로 열기’를 눌러 Chrome에서 다시 열어 주세요.' : '이 주소를 Chrome에서 열어 주세요.') + tail;
+  }
   const messages = {
     InsecureContext: '마이크를 쓰려면 배포한 HTTPS 주소를 Chrome에서 직접 열어 주세요.',
     MediaUnsupported: '이 화면에서는 마이크 사용을 지원하지 않아요. 최신 Chrome에서 직접 열어 주세요.',
@@ -1572,7 +1655,7 @@ function errorMessage(error, source = 'media') {
     OverconstrainedError: '연결된 마이크의 소리 설정을 사용할 수 없어요. 다른 마이크로 다시 시도해 주세요.',
     AbortError: '마이크 준비가 취소됐어요. 준비가 되면 다시 Read를 눌러 주세요.',
     PrepareTimeout: '마이크 준비가 오래 걸려 멈췄어요. 권한 창과 인터넷 연결을 확인한 뒤 다시 눌러 주세요.',
-    'not-allowed': '브라우저 음성인식의 마이크 접근이 차단됐어요. Chrome 권한과 현재 사이트의 허용을 확인해 주세요.',
+    'not-allowed': '음성인식이 마이크를 쓰지 못했어요. ① 주소창 왼쪽 아이콘 → 권한 → 마이크 허용 ② 설정 → 애플리케이션 → Google → 권한 → 마이크 허용을 확인해 주세요. (아래 ‘마이크 확인 · 권한 도움말’ 참고)',
     'service-not-allowed': '이 브라우저나 기기에서 음성인식 서비스 사용이 제한됐어요. 마이크 권한만의 문제는 아닐 수 있어요. Chrome에서 이 페이지를 직접 열어 주세요.',
     'audio-capture': '음성인식이 마이크를 열지 못했어요. 다른 녹음 앱을 닫고 다시 시도해 주세요.',
     network: '음성인식 서버에 연결하지 못했어요. 인터넷을 확인해 주세요. 연결 후 다시 Read를 눌러 주세요.',
@@ -1644,11 +1727,46 @@ function stopClock(a) {
   clearInterval(a.clock);
   clearTimeout(a.limitTimer);
   clearTimeout(a.prepareTimer);
+  clearTimeout(a.trackWatch);
+}
+function checkTrackHearing(a) {
+  if (!isCurrent(a) || a.finalized || !a.usesTrack || voice.phase !== 'listening') return;
+  if ([...a.results.values()].some(piece => piece.text.trim())) return;
+  // Voice reached the meter but no words came back: the browser ignored the
+  // track, so let the recognition service open the microphone itself.
+  if (!a.meterObserved || a.peak > 0.015) { switchToDirect(a); return; }
+  // Nearly silent: this is the wrong / muted microphone, not the mode.
+  const label = voice.stream?.getAudioTracks()[0]?.label || '선택된 마이크';
+  byId('micHelp').open = true;
+  refreshMicList();
+  setStatus(`‘${label}’에서 소리가 거의 들리지 않아요. 아래 ‘사용할 마이크’에서 말하고 있는 마이크를 고른 뒤 다시 Read를 눌러 주세요.`);
+  a.trackWatch = setTimeout(() => checkTrackHearing(a), 4000);
+}
+function switchToDirect(a) {
+  if (!isCurrent(a) || a.finalized || !a.usesTrack || voice.phase !== 'listening') return;
+  if ([...a.results.values()].some(piece => piece.text.trim())) return;
+  voice.forceDirect = true;          // remember for the rest of this visit
+  a.usesTrack = false;
+  const old = a.recognizer;
+  if (old) {
+    old.onstart = old.onaudiostart = old.onresult = old.onerror = old.onend = null;
+    try { old.abort(); } catch {}
+  }
+  a.track = null;
+  releaseMicrophone();               // hand the microphone to the recognition service
+  byId('meterWrap').hidden = true;
+  try {
+    startRecognizer(a);
+    setStatus('마이크 연결 방식을 바꿨어요. 처음부터 다시 천천히 읽어 주세요.');
+  } catch { failAttempt(a, errorMessage('NotSupportedError', 'recognition')); }
 }
 function beginListening(a) {
   if (!isCurrent(a) || voice.phase !== 'preparing') return;
   clearTimeout(a.prepareTimer);
   a.started = performance.now();
+  // Safety net: if the shared-track mode hears nothing in 4 s (some devices
+  // silently ignore the track), switch to the direct recognition mode.
+  if (a.usesTrack) a.trackWatch = setTimeout(() => checkTrackHearing(a), 4000);
   setPhase('listening');
   setCoach('listening');
   setBadge('읽으세요!', 'live');
@@ -1745,7 +1863,7 @@ function resumeRecognizer(a) {
 }
 function canResume(a) {
   return isCurrent(a) && !a.finalized && !a.error && voice.phase === 'listening' && !document.hidden
-    && (a.resumes || 0) < MAX_RESUMES && performance.now() - (a.started || 0) < MAX_RECORD_MS - 1500;
+    && !a.stopResume && (a.resumes || 0) < MAX_RESUMES && performance.now() - (a.started || 0) < MAX_RECORD_MS - 1500;
 }
 function startRecognizer(a, track = null) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1757,14 +1875,21 @@ function startRecognizer(a, track = null) {
   r.lang = 'en-US';
   r.continuous = true;
   r.interimResults = true;
-  r.maxAlternatives = 1;
+  r.maxAlternatives = 3;
   r.onstart = () => { beginListening(a); };
   r.onresult = event => {
     if (!isCurrent(a) || a.finalized) return;
     if (a.recognizer !== r) return;
     for (let i = 0; i < event.results.length; i++) {
       const result = event.results[i];
-      a.results.set(a.base + i, { text: result[0]?.transcript || '', final: !!result.isFinal });
+      // Keep the alternative that fits the card best (e.g. "three" over "tree").
+      let text = result[0]?.transcript || '', best = -1;
+      for (let k = 0; k < result.length; k++) {
+        const option = result[k]?.transcript || '';
+        const score = alignWords(a.expectedTokens || [], speechTokens(option)).size;
+        if (score > best) { best = score; text = option; }
+      }
+      a.results.set(a.base + i, { text, final: !!result.isFinal });
     }
     // Replace this session's result slots; earlier sessions stay untouched.
     for (const key of a.results.keys()) if (key >= a.base + event.results.length) a.results.delete(key);
@@ -1775,6 +1900,9 @@ function startRecognizer(a, track = null) {
     if (a.recognizer !== r) return;
     // Silence or a service-side stop mid-reading: onend resumes listening.
     if (event.error === 'no-speech' || (event.error === 'aborted' && canResume(a))) { a.noSpeech = true; return; }
+    // After a pause-resume, a refused restart should not throw away what was
+    // already heard: end listening normally and let the child decide.
+    if ((a.resumes || 0) > 0 && voice.phase === 'listening') { a.stopResume = true; return; }
     a.error = event.error || 'unknown';
     a.resolveRecognition?.();
     if (voice.phase !== 'finishing') failAttempt(a, errorMessage(a.error, 'recognition'));
@@ -1814,6 +1942,7 @@ async function startReading() {
   byId('meterWrap').hidden = true;
   byId('diagnostic').textContent = '';
   const a = { id: ++voice.serial, item: selectedSentence.item, mode: voice.mode,
+    expectedTokens: speechTokens(`${selectedSentence.item.q} ${selectedSentence.item.a}`),
     results: new Map(), peak: 0, meterObserved: false, cancelled: false, finalized: false,
     usesTrack: voice.mode === 'auto' && sharedTrackSupported() };
   voice.attempt = a;
@@ -1906,11 +2035,21 @@ function evaluateReading(transcript, item) {
     answerOK = expectNo ? negative : positive;
   }
   const targetWords = getTargetWords(item);
-  const target = targetWords.every(word => heard.some(h => nearbyWord(word, h)));
+  // A key word counts only when it lines up with its own place in the sentence.
+  const keyHits = targetWords.filter(word => expected.some((w, i) => w === word && matched.has(i))).length;
+  const target = targetWords.length > 0 && keyHits >= Math.ceil(targetWords.length / 2);
+  const enough = matched.size >= Math.ceil(expected.length * .4);
   const otherKey = heard.some(word => KEY_WORDS.includes(word) && !targetWords.some(key => nearbyWord(key, word)));
-  if (otherKey && !target) return { message: '파란 글씨의 중요한 단어를 다시 읽어 볼까요? 화면의 단어를 봐 주세요.' };
-  const enoughWords = matched.size >= Math.ceil(expected.length * .5);
-  if (enoughWords || (target && answerOK)) return { ok: true, matched: matched.size, total: expected.length };
+  // Saying a different card's key word (pigs for cows) is a content mix-up, not pronunciation.
+  if (otherKey && keyHits < targetWords.length) return { message: '파란 글씨의 중요한 단어를 다시 읽어 볼까요? 화면의 단어를 봐 주세요.' };
+  // Both sentences should be read: at least one word from each line
+  // (a one-word reply such as "Okay." is often dropped by the recognizer).
+  const qLen = speechTokens(item.q).length;
+  const lineA = [...matched].some(i => i < qLen);
+  const lineB = expected.length - qLen <= 1 || [...matched].some(i => i >= qLen);
+  const enoughWords = enough && lineA && lineB;
+  const someWords = matched.size >= Math.ceil(expected.length * .3);
+  if (enoughWords || (target && answerOK && someWords)) return { ok: true, matched: matched.size, total: expected.length };
   return { message: matched.size ? '잘하고 있어요! 화면의 단어를 조금만 더 읽어 볼까요?' : '목소리가 잘 들리지 않았어요. 천천히 다시 읽어 볼까요?' };
 }
 
@@ -1938,7 +2077,44 @@ window.addEventListener('pagehide', () => {
 
   voice.context?.close().catch(() => {});
 });
+// Samsung Internet and in-app browsers (KakaoTalk, NAVER, …) expose the
+// speech API but usually cannot reach an English recognition service, so the
+// request fails at once with "not-allowed". Point children to Chrome instead.
+function detectUnsupportedBrowser() {
+  const ua = navigator.userAgent;
+  if (/SamsungBrowser/i.test(ua)) return '삼성 인터넷';
+  if (/KAKAOTALK/i.test(ua)) return '카카오톡 안의 브라우저';
+  if (/NAVER\(inapp|NAVER\//i.test(ua)) return '네이버 앱 안의 브라우저';
+  if (/Instagram|FBAN|FBAV|\bLine\/|DaumApps|Whale\//i.test(ua)) return '지금 사용하는 브라우저';
+  if (/Android/i.test(ua) && /; wv\)/.test(ua)) return '앱 안의 브라우저';
+  return '';
+}
+const UNSUPPORTED_BROWSER = detectUnsupportedBrowser();
+function chromeLink() {
+  if (!/^https?:$/.test(location.protocol)) return '';
+  if (!/Android/i.test(navigator.userAgent)) return location.href;
+  return `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=${location.protocol.slice(0, -1)};package=com.android.chrome;end`;
+}
+// Android tablets: open this page in Chrome automatically (once per visit).
+// "?nochrome=1" marks the fallback when Chrome is missing, so it never loops.
+function autoOpenChrome() {
+  if (!UNSUPPORTED_BROWSER || !/Android/i.test(navigator.userAgent) || !/^https?:$/.test(location.protocol)) return;
+  const params = new URLSearchParams(location.search);
+  if (params.has('nochrome')) return;
+  try { if (sessionStorage.getItem('chrome-redirect-tried')) return; sessionStorage.setItem('chrome-redirect-tried', '1'); } catch {}
+  params.set('nochrome', '1');
+  const fallback = `${location.origin}${location.pathname}?${params}`;
+  location.href = chromeLink().replace(';end', `;S.browser_fallback_url=${encodeURIComponent(fallback)};end`);
+}
+if (UNSUPPORTED_BROWSER) {
+  autoOpenChrome();
+  const link = chromeLink();
+  document.querySelectorAll('[data-browser-notice]').forEach(box => { box.hidden = false; });
+  document.querySelectorAll('[data-browser-name]').forEach(el => { el.textContent = UNSUPPORTED_BROWSER; });
+  document.querySelectorAll('[data-open-chrome]').forEach(a => { if (link) a.href = link; else a.hidden = true; });
+}
 watchPermission();
+refreshMicList();
 updateVoiceUI();
 
 
