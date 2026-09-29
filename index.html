@@ -465,6 +465,16 @@
 
   .mic-pick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; font-weight: 700; }
   .mic-pick select { min-height: 40px; max-width: 100%; padding: 6px 10px; border-radius: 10px; border: 1px solid #cbd5e1; font: inherit; font-weight: 500; }
+  .chrome-gate { position: fixed; inset: 0; z-index: 100000; display: grid; place-items: center; padding: 20px; background: #0f2a3acc; backdrop-filter: blur(4px); cursor: pointer; }
+  .chrome-gate[hidden] { display: none; }
+  .chrome-gate-box { width: min(480px, 100%); padding: 28px 24px 20px; border-radius: 28px; background: white; text-align: center; color: #1e293b; box-shadow: 0 24px 80px #0006; cursor: default; }
+  .chrome-gate-icon { font-size: 54px; line-height: 1; }
+  .chrome-gate h2 { margin: 10px 0 8px; font-size: 26px; }
+  .chrome-gate p { margin: 0 0 18px; font-size: 17px; line-height: 1.6; word-break: keep-all; }
+  .chrome-gate-go { display: block; padding: 18px; border-radius: 18px; background: #1a73e8; color: white; font-size: 22px; font-weight: 900; text-decoration: none; box-shadow: 0 4px 0 #1557b0; }
+  .chrome-gate-help { margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: #fff4e5; text-align: left; font-size: 14px; line-height: 1.6; color: #7a4300; }
+  .chrome-gate-help ol { margin: 6px 0 10px; padding-left: 20px; }
+  .chrome-gate-stay { margin-top: 14px; min-height: 40px; background: transparent; color: #64748b; font-size: 14px; font-weight: 600; text-decoration: underline; }
   /* v5.5: Samsung Internet / in-app browser notice */
   .browser-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 14px; padding: 12px 16px; border-radius: 14px; background: #fff4e5; border: 2px solid #f5b454; color: #7a4300; font-size: 16px; line-height: 1.5; word-break: keep-all; }
   .reading-dialog .browser-notice { margin: 12px 0 0; font-size: 14px; }
@@ -495,6 +505,23 @@
 </style>
 </head>
 <body>
+<div id="chromeGate" class="chrome-gate" role="dialog" aria-modal="true" aria-labelledby="chromeGateTitle" hidden>
+  <div class="chrome-gate-box">
+    <div class="chrome-gate-icon" aria-hidden="true">🌐</div>
+    <h2 id="chromeGateTitle">Chrome에서 열어요</h2>
+    <p><strong id="chromeGateBrowser">이 브라우저</strong>에서는 영어 읽기(음성인식)가 되지 않아요.<br>아래 버튼을 한 번 누르면 <strong>Chrome</strong>으로 열려요.</p>
+    <a id="chromeGateGo" class="chrome-gate-go" href="#">Chrome으로 열기</a>
+    <div id="chromeGateHelp" class="chrome-gate-help" hidden>
+      <strong>Chrome이 열리지 않나요?</strong>
+      <ol>
+        <li>삼성 인터넷 ☰ 메뉴 → 설정 → 유용한 기능 → <strong>다른 앱에서 링크 열기</strong>를 켜고 다시 눌러 주세요.</li>
+        <li>또는 주소를 복사해서 Chrome 주소창에 붙여 넣어 주세요.</li>
+      </ol>
+      <button id="chromeGateCopy" type="button" class="secondary">주소 복사하기</button>
+    </div>
+    <button id="chromeGateStay" type="button" class="chrome-gate-stay">여기서 그냥 볼게요</button>
+  </div>
+</div>
 <div class="wrap">
   <div class="browser-notice" data-browser-notice hidden><span><strong data-browser-name>이 브라우저</strong>에서는 영어 음성인식(단어 동그라미)이 작동하지 않을 수 있어요. <strong>Chrome</strong>에서 열어 주세요.</span><a class="open-chrome" data-open-chrome href="#">Chrome으로 열기</a></div>
   <div class="top">
@@ -2095,19 +2122,39 @@ function chromeLink() {
   if (!/Android/i.test(navigator.userAgent)) return location.href;
   return `intent://${location.host}${location.pathname}${location.search}#Intent;scheme=${location.protocol.slice(0, -1)};package=com.android.chrome;end`;
 }
-// Android tablets: open this page in Chrome automatically (once per visit).
-// "?nochrome=1" marks the fallback when Chrome is missing, so it never loops.
-function autoOpenChrome() {
-  if (!UNSUPPORTED_BROWSER || !/Android/i.test(navigator.userAgent) || !/^https?:$/.test(location.protocol)) return;
+// Samsung Internet / in-app browsers block opening another app without a tap,
+// so a full-screen gate asks for ONE tap, which then hands the page to Chrome.
+// "?nochrome=1" (fallback when Chrome is missing) skips the gate, so it never loops.
+function chromeIntentWithFallback() {
   const params = new URLSearchParams(location.search);
-  if (params.has('nochrome')) return;
-  try { if (sessionStorage.getItem('chrome-redirect-tried')) return; sessionStorage.setItem('chrome-redirect-tried', '1'); } catch {}
   params.set('nochrome', '1');
   const fallback = `${location.origin}${location.pathname}?${params}`;
-  location.href = chromeLink().replace(';end', `;S.browser_fallback_url=${encodeURIComponent(fallback)};end`);
+  return chromeLink().replace(';end', `;S.browser_fallback_url=${encodeURIComponent(fallback)};end`);
+}
+function showChromeGate() {
+  if (!UNSUPPORTED_BROWSER || !/Android/i.test(navigator.userAgent) || !/^https?:$/.test(location.protocol)) return;
+  if (new URLSearchParams(location.search).has('nochrome')) return;
+  const gate = byId('chromeGate');
+  byId('chromeGateBrowser').textContent = UNSUPPORTED_BROWSER;
+  byId('chromeGateGo').href = chromeIntentWithFallback();
+  gate.hidden = false;
+  const go = event => {
+    if (event.target.closest('#chromeGateStay, #chromeGateCopy')) return;
+    event.preventDefault();
+    location.href = chromeIntentWithFallback();
+    // Still here after a moment: Chrome could not be opened from this browser.
+    setTimeout(() => { if (document.visibilityState === 'visible') byId('chromeGateHelp').hidden = false; }, 1600);
+  };
+  gate.addEventListener('click', go);
+  byId('chromeGateStay').addEventListener('click', () => { gate.hidden = true; });
+  byId('chromeGateCopy').addEventListener('click', async () => {
+    const url = location.origin + location.pathname;
+    try { await navigator.clipboard.writeText(url); byId('chromeGateCopy').textContent = '주소를 복사했어요!'; }
+    catch { byId('chromeGateCopy').textContent = url; }
+  });
 }
 if (UNSUPPORTED_BROWSER) {
-  autoOpenChrome();
+  showChromeGate();
   const link = chromeLink();
   document.querySelectorAll('[data-browser-notice]').forEach(box => { box.hidden = false; });
   document.querySelectorAll('[data-browser-name]').forEach(el => { el.textContent = UNSUPPORTED_BROWSER; });
